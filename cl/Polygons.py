@@ -10,7 +10,7 @@ class ConvexPolygon:
     # this number as limit we avoid overflow problems.
     INT_MAX = 10000
 
-    # Constructor of the convex polygon
+    # Constructor of the empty convex polygon
     def __init__(self):
         self.hull = []
         self.color = [0, 0, 0]
@@ -28,8 +28,10 @@ class ConvexPolygon:
             else:
                 txt += '\n'
             i += 1
-        print(txt)
-        return txt
+        if n == 0:
+            return 'Empty polygon'
+        else:
+            return txt
 
     def iteration(self, p, setOfVertices):
         self.hull.append(setOfVertices[p])
@@ -44,22 +46,15 @@ class ConvexPolygon:
     # Body: Constructs a convex hull and it's stored in the class instance
     def constructPolygon(self, setOfVertices):
         n = len(setOfVertices)
-        left = 0
+        if n != 0:
+            left = 0
 
-        for i in range(1, n):
-            if setOfVertices[i][0] < setOfVertices[left][0] or (
-                    setOfVertices[i][0] == setOfVertices[left][0] and setOfVertices[i][1] < setOfVertices[left][1]):
-                left = i
+            for i in range(1, n):
+                if setOfVertices[i][0] < setOfVertices[left][0] or (
+                        setOfVertices[i][0] == setOfVertices[left][0] and setOfVertices[i][1] < setOfVertices[left][1]):
+                    left = i
 
-        p = left
-        p = self.iteration(p, setOfVertices)
-        # self.hull.append(setOfVertices[p])
-        # q = (p + 1) % n
-        # for j in range(0, n):
-        #    if self.orientation(setOfVertices[p], setOfVertices[q], setOfVertices[j]) == 2:
-        #        q = j
-        # p = q
-        while p != left:
+            p = left
             p = self.iteration(p, setOfVertices)
             # self.hull.append(setOfVertices[p])
             # q = (p + 1) % n
@@ -67,6 +62,14 @@ class ConvexPolygon:
             #    if self.orientation(setOfVertices[p], setOfVertices[q], setOfVertices[j]) == 2:
             #        q = j
             # p = q
+            while p != left:
+                p = self.iteration(p, setOfVertices)
+                # self.hull.append(setOfVertices[p])
+                # q = (p + 1) % n
+                # for j in range(0, n):
+                #    if self.orientation(setOfVertices[p], setOfVertices[q], setOfVertices[j]) == 2:
+                #        q = j
+                # p = q
 
     # Pre: points are the vertices of a polygon and p is a point
     # Post: returns true if p is inside points
@@ -150,6 +153,8 @@ class ConvexPolygon:
     def centroid(self):
         cX = cY = det = 0
         n = len(self.hull)
+        if n == 0:
+            return ()
         for i in range(0, n):
             if i + 1 == n:
                 j = 0
@@ -175,7 +180,7 @@ class ConvexPolygon:
         result.constructPolygon(self.unitePoints(self, poly))
         return result
 
-    # Pre: a and b are a set of vertices (tuple (x,y), being x and y coordinates of the point)
+    # Pre: a and b are a set of (tuple (x,y), being x and y coordinates of the point)
     # Body: returns the union of both list of vertices, a and b
     def unitePoints(self, a, b):
         result = list(set(a.hull) | set(b.hull))
@@ -194,6 +199,15 @@ class ConvexPolygon:
     # Pre: poly is the polygon that we are going to intersect
     # Post: result is the intersection of the current polygon with poly
     def intersection(self, poly):
+        if len(self.hull) == 0:
+            res = ConvexPolygon()
+            res.constructPolygon(poly.hull)
+            return res
+        elif len(poly.hull) == 0:
+            res = ConvexPolygon()
+            res.constructPolygon(self.hull)
+            return res
+
         vertices_result = []
         for p in self.hull:
             if poly.CheckPointInside(p):
@@ -243,10 +257,18 @@ class ConvexPolygon:
 # Pre: polygons is the list of polygons from where we are getting the bounding box
 # Body: returns the coordinates of the bounding box containing all the polygons in the input list
 def boundingBox(polygons):
-    min_x = polygons[0].getFirstPoint()[0]
-    min_y = polygons[0].getFirstPoint()[1]
-    max_x = polygons[0].getFirstPoint()[0]
-    max_y = polygons[0].getFirstPoint()[1]
+    min_x = -1
+    min_y = -1
+    max_x = -1
+    max_y = -1
+    for polygon in polygons:
+        if polygon.numberOfVerticesAndEdges() != 0:
+            min_x = polygon.getFirstPoint()[0]
+            min_y = polygon.getFirstPoint()[1]
+            max_x = polygon.getFirstPoint()[0]
+            max_y = polygon.getFirstPoint()[1]
+            break
+
     for polygon in polygons:
         vertices = polygon.getHull()
         for vertex in vertices:
@@ -258,14 +280,20 @@ def boundingBox(polygons):
                 min_y = vertex[1]
             if vertex[1] > max_y:
                 max_y = vertex[1]
-    return [(round(Decimal(min_x), 3), round(Decimal(min_y), 3)), (round(Decimal(max_x), 3), round(Decimal(max_y), 3))]
+
+    if min_x == -1:
+        return []
+    else:
+        return [(round(Decimal(min_x), 3), round(Decimal(min_y), 3)), (round(Decimal(max_x), 3), round(Decimal(max_y), 3))]
 
 
 # Pre: polygons are the set of polygons to draw and filename is the name of the output file.
 # Post: on the directory there is a new file called as 'filename', and it's an image of the polygons
 def drawPolygons(polygons, filename):
     bounding = boundingBox(polygons)
-    if bounding[0] == bounding[1]:
+    if len(bounding) == 0:
+        raise NameError('Empty polygons cannot be drawn')
+    elif bounding[0] == bounding[1]:
         raise NameError('Polygon with one point cannot be drawn')
 
     x_scale = 1
@@ -279,7 +307,8 @@ def drawPolygons(polygons, filename):
     img = Image.new('RGB', (400, 400), 'White')
     dib = ImageDraw.Draw(img)
     for polygon in polygons:
-        dib.polygon(polygon.scale(x_scale, y_scale), 'White', polygon.getColorHex())
+        if polygon.numberOfVerticesAndEdges() > 1:
+            dib.polygon(polygon.scale(x_scale, y_scale), 'White', polygon.getColorHex())
     img.save(filename)
     return filename
 

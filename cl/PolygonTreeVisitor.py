@@ -67,9 +67,11 @@ class PolygonTreeVisitor(ConvexPolygonVisitor):
                 if operator[0] == '[' or operator[0] == '(':
                     polygon = self.visit(components[1])
                     bounding = boundingBox([polygon])
+                    result = ConvexPolygon()
+                    if len(bounding) == 0:
+                        return result
                     point_a = (bounding[0][0], bounding[1][1])
                     point_b = (bounding[1][0], bounding[0][1])
-                    result = ConvexPolygon()
                     result.constructPolygon([bounding[0], point_a, bounding[1], point_b])
                     return result
                 # case ID
@@ -143,6 +145,8 @@ class PolygonTreeVisitor(ConvexPolygonVisitor):
     def visitCentroid(self, ctx: ConvexPolygonParser.CentroidContext):
         components = [n for n in ctx.getChildren()]
         centroid = self.visit(components[1]).centroid()
+        if centroid == ():
+            return centroid
         x = centroid[0]
         y = centroid[1]
         print(str(x) + ' ' + str(y))

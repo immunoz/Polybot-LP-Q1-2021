@@ -6,6 +6,7 @@ point: REAL SPACE REAL;
 
 convex_polygon : '[' (point (SPACE SPACE point)+) ']'
               | '[' point ']'
+              | '[' ']'
               ;
 
 assignment:
@@ -25,9 +26,9 @@ draw: 'draw ' '"' FILENAME '"' COMMA SPACE( (operator (COMMA SPACE operator)+) |
 
 
 operator: '(' operator ')'
+    | '#' operator
     | operator ' * ' operator
     | operator ' + ' operator
-    | '#' operator
     | '!' REAL
     | convex_polygon
     | ID

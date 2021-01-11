@@ -167,7 +167,6 @@ def help(update, context):
 def assign(update, context):
     try:
         get_expression_tree(update.message.text[8:], my_visitor)
-        message(context, 'Variable created successfully', update)
     except Exception as e:
         message(context, 'Variable not created, an error has been thrown:' + str(e), update)
         message(context, 'If you have any errors, maybe it\'s due to the syntax of the operation,'
@@ -231,9 +230,12 @@ def centroid(update, context):
     try:
         message(context, 'The centroid of your polygon is the following:', update)
         result = get_expression_tree(update.message.text[1:], my_visitor)
-        x = str(float(result[0]))
-        y = str(float(result[1]))
-        message(context, '(' + x + ',' + y + ')', update)
+        if result == ():
+            message(context, 'Empty polygon has no centroid', update)
+        else:
+            x = str(float(result[0]))
+            y = str(float(result[1]))
+            message(context, '(' + x + ',' + y + ')', update)
     except Exception as e:
         message(context, 'Centroid could not be computed, an error has been thrown: ' + str(e), update)
         message(context,
