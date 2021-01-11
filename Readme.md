@@ -60,7 +60,7 @@ Inside the code there are some annotations of each function explaining what it d
 
 ### Second part: create a programming language to work with convex polygons using antlr with python
 
-To compile the grammar use the following command:
+To compile the grammar use the following command inside the cl folder:
 ```
 antlr4 -Dlanguage=Python3 -no-listener -visitor ConvexPolygon.g
 ```
