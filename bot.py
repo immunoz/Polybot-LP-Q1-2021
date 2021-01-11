@@ -2,7 +2,7 @@ from telegram.ext import Updater, CommandHandler
 from sys import path
 from os import getcwd
 path.append(getcwd() + "\\cl")
-
+# This two lines violate the pep8 rules, but it is necessary, because if we move the imports to the top, program will not compile
 from cl.main import get_expression_tree
 from cl.PolygonTreeVisitor import PolygonTreeVisitor
 

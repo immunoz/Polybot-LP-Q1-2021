@@ -199,13 +199,8 @@ class ConvexPolygon:
     # Pre: poly is the polygon that we are going to intersect
     # Post: result is the intersection of the current polygon with poly
     def intersection(self, poly):
-        if len(self.hull) == 0:
+        if len(self.hull) == 0 or len(poly.hull) == 0:
             res = ConvexPolygon()
-            res.constructPolygon(poly.hull)
-            return res
-        elif len(poly.hull) == 0:
-            res = ConvexPolygon()
-            res.constructPolygon(self.hull)
             return res
 
         vertices_result = []
