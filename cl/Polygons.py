@@ -4,66 +4,6 @@ from decimal import Decimal
 from PIL import Image, ImageDraw
 
 
-# Pre: vertices_result and points are a set of points
-# Post: those points inside points that are not inside vertices_result are inserted into vertices_result
-def add_points(vertices_result, points):
-    for p in points:
-        found = False
-        for p2 in vertices_result:
-            if p == p2:
-                found = True
-                break
-        if not found:
-            vertices_result.append(p)
-
-
-# Pre: p1 and p2 are points and x, y are coordinates
-# Post: returns true if the point represented by x, y is inside the segment p1-p2
-def on_segment(p1, p2, x, y):
-    cond1 = (min(p1[0], p2[0]) < x or min(p1[0], p2[0]) == x)
-    cond2 = (max(p1[0], p2[0]) > x or max(p1[0], p2[0]) == x)
-    cond3 = (min(p1[1], p2[1]) < y or min(p1[1], p2[1]) == y)
-    cond4 = (max(p1[1], p2[1]) > y or max(p1[1], p2[1]) == y)
-    return cond1 and cond2 and cond3 and cond4
-
-
-# Pre: p1, p2, e1, e2 are points
-# Post: If edge p1-p2 and e1-e2 intersect returns the intersection point, otherwise returns ()
-def getIntersectionPoint(p1, p2, e1, e2):
-    A1 = p2[1] - p1[1]
-    B1 = p1[0] - p2[0]
-    C1 = A1 * p1[0] + B1 * p1[1]
-
-    A2 = e2[1] - e1[1]
-    B2 = e1[0] - e2[0]
-    C2 = A2 * e1[0] + B2 * e1[1]
-
-    det = A1 * B2 - A2 * B1
-    if det == 0:
-        return ()
-    else:
-        x = (B2 * C1 - B1 * C2) / det
-        y = (A1 * C2 - A2 * C1) / det
-        on_segment_one = on_segment(p1, p2, x, y)
-        on_segment_two = on_segment(e1, e2, x, y)
-        if on_segment_one and on_segment_two:
-            return (x, y)
-    return ()
-
-
-# Pre: p1 and p2 are points, and vertices are the vertices of a polygon
-# Post: returns a list of the intersection points between edge p1-p2 and the polygon represented by vertices
-def getIntersectionPoints(p1, p2, vertices):
-    intersection_points = []
-    n = len(vertices)
-    for i in range(0, n):
-        j = (i + 1) % n
-        intersection = getIntersectionPoint(p1, p2, vertices[i], vertices[j])
-        if intersection != ():
-            intersection_points.append(intersection)
-    return intersection_points
-
-
 class ConvexPolygon:
     # this value is used to simulate the infinity of a segment, and we set it because the operation
     # do intersect uses orientation, and inside orientation some multiplications are done. Setting
@@ -91,73 +31,12 @@ class ConvexPolygon:
         print(txt)
         return txt
 
-    # Pre: p1, p2, x are points
-    # Post: returns true if x is on segment p1-p2, otherwise returns false
-    def onSegment(self, p1, x, p2):
-        if ((x[0] <= max(p1[0], p2[0])) & (x[0] >= min(p1[0], p2[0])) & (x[1] <= max(p1[1], p2[1])) & (
-                x[1] >= min(p1[1], p2[1]))):
-            return True
-        return False
-
-    # Pre: p1, p2 and p3 are points
-    # Post: Given p1, p2, p3, returns a value that indicates if the three points are
-    # collinear, clockwise, counterclockwise:
-    # value = 0 -> Collinear
-    # value = 1 -> Clockwise
-    # value = 2 -> Counterclockwise
-    def orientation(self, p1, p2, p3):
-        val = (((p2[1] - p1[1]) * (p3[0] - p2[0])) - ((p2[0] - p1[0]) * (p3[1] - p2[1])))
-
-        if val == 0:
-            return 0
-        if val > 0:
-            return 1
-        else:
-            return 2
-
-    # Pre: p1, q1, p2, q2 are points
-    # Returns true if edge p1-q1 and p2-q2 intersect
-    def doIntersect(self, p1, q1, p2, q2):
-        # Find the four orientations needed for
-        # general and special cases
-        o1 = self.orientation(p1, q1, p2)
-        o2 = self.orientation(p1, q1, q2)
-        o3 = self.orientation(p2, q2, p1)
-        o4 = self.orientation(p2, q2, q1)
-
-        # General case
-        if (o1 != o2) and (o3 != o4):
-            return True
-
-        # Special Cases
-        # p1, q1 and p2 are colinear and
-        # p2 lies on segment p1q1
-        if (o1 == 0) and (self.onSegment(p1, p2, q1)):
-            return True
-
-        # p1, q1 and p2 are colinear and
-        # q2 lies on segment p1q1
-        if (o2 == 0) and (self.onSegment(p1, q2, q1)):
-            return True
-
-        # p2, q2 and p1 are colinear and
-        # p1 lies on segment p2q2
-        if (o3 == 0) and (self.onSegment(p2, p1, q2)):
-            return True
-
-        # p2, q2 and q1 are colinear and
-        # q1 lies on segment p2q2
-        if (o4 == 0) and (self.onSegment(p2, q1, q2)):
-            return True
-
-        return False
-
     def iteration(self, p, setOfVertices):
         self.hull.append(setOfVertices[p])
         n = len(setOfVertices)
         q = (p + 1) % n
         for i in range(0, n):
-            if self.orientation(setOfVertices[p], setOfVertices[q], setOfVertices[i]) == 2:
+            if orientation(setOfVertices[p], setOfVertices[q], setOfVertices[i]) == 2:
                 q = i
         return q
 
@@ -201,9 +80,9 @@ class ConvexPolygon:
 
         while True:
             next = (i + 1) % n
-            if self.doIntersect(points[i], points[next], p, extreme):
-                if self.orientation(points[i], p, points[next]) == 0:
-                    return self.onSegment(points[i], p, points[next])
+            if doIntersect(points[i], points[next], p, extreme):
+                if orientation(points[i], p, points[next]) == 0:
+                    return onSegment(points[i], p, points[next])
 
                 count += 1
 
@@ -250,23 +129,18 @@ class ConvexPolygon:
         perimeter = 0.0
         j = n - 1
         for i in range(0, n):
-            perimeter += self.distance(self.hull[i], self.hull[j])
+            perimeter += distance(self.hull[i], self.hull[j])
             j = i
         return Decimal(perimeter)
-
-    # Pre: x and y are two points
-    # Post: Returns the distance between the two points
-    def distance(self, x, y):
-        return math.sqrt(pow(x[0] - y[0], 2) + pow(x[1] - y[1], 2))
 
     # Pre:
     # Post Returns true if the current polygon is regular or not
     def isRegular(self):
         n = len(self.hull)
         j = n - 1
-        edgeLength = self.distance(self.hull[0], self.hull[j])
+        edgeLength = distance(self.hull[0], self.hull[j])
         for i in range(0, n):
-            if not edgeLength == self.distance(self.hull[i], self.hull[j]):
+            if not edgeLength == distance(self.hull[i], self.hull[j]):
                 return False
             j = i
         return True
@@ -408,3 +282,133 @@ def drawPolygons(polygons, filename):
         dib.polygon(polygon.scale(x_scale, y_scale), 'White', polygon.getColorHex())
     img.save(filename)
     return filename
+
+
+# Pre: vertices_result and points are a set of points
+# Post: those points inside points that are not inside vertices_result are inserted into vertices_result
+def add_points(vertices_result, points):
+    for p in points:
+        found = False
+        for p2 in vertices_result:
+            if p == p2:
+                found = True
+                break
+        if not found:
+            vertices_result.append(p)
+
+
+# Pre: p1 and p2 are points and x, y are coordinates
+# Post: returns true if the point represented by x, y is inside the segment p1-p2
+def on_segment(p1, p2, x, y):
+    cond1 = (min(p1[0], p2[0]) < x or min(p1[0], p2[0]) == x)
+    cond2 = (max(p1[0], p2[0]) > x or max(p1[0], p2[0]) == x)
+    cond3 = (min(p1[1], p2[1]) < y or min(p1[1], p2[1]) == y)
+    cond4 = (max(p1[1], p2[1]) > y or max(p1[1], p2[1]) == y)
+    return cond1 and cond2 and cond3 and cond4
+
+
+# Pre: p1, p2, e1, e2 are points
+# Post: If edge p1-p2 and e1-e2 intersect returns the intersection point, otherwise returns ()
+def getIntersectionPoint(p1, p2, e1, e2):
+    A1 = p2[1] - p1[1]
+    B1 = p1[0] - p2[0]
+    C1 = A1 * p1[0] + B1 * p1[1]
+
+    A2 = e2[1] - e1[1]
+    B2 = e1[0] - e2[0]
+    C2 = A2 * e1[0] + B2 * e1[1]
+
+    det = A1 * B2 - A2 * B1
+    if det == 0:
+        return ()
+    else:
+        x = (B2 * C1 - B1 * C2) / det
+        y = (A1 * C2 - A2 * C1) / det
+        on_segment_one = on_segment(p1, p2, x, y)
+        on_segment_two = on_segment(e1, e2, x, y)
+        if on_segment_one and on_segment_two:
+            return (x, y)
+    return ()
+
+
+# Pre: p1 and p2 are points, and vertices are the vertices of a polygon
+# Post: returns a list of the intersection points between edge p1-p2 and the polygon represented by vertices
+def getIntersectionPoints(p1, p2, vertices):
+    intersection_points = []
+    n = len(vertices)
+    for i in range(0, n):
+        j = (i + 1) % n
+        intersection = getIntersectionPoint(p1, p2, vertices[i], vertices[j])
+        if intersection != ():
+            intersection_points.append(intersection)
+    return intersection_points
+
+
+# Pre: p1, p2, x are points
+# Post: returns true if x is on segment p1-p2, otherwise returns false
+def onSegment(p1, x, p2):
+    if ((x[0] <= max(p1[0], p2[0])) & (x[0] >= min(p1[0], p2[0])) & (x[1] <= max(p1[1], p2[1])) & (
+            x[1] >= min(p1[1], p2[1]))):
+        return True
+    return False
+
+
+# Pre: p1, p2 and p3 are points
+# Post: Given p1, p2, p3, returns a value that indicates if the three points are
+# collinear, clockwise, counterclockwise:
+# value = 0 -> Collinear
+# value = 1 -> Clockwise
+# value = 2 -> Counterclockwise
+def orientation(p1, p2, p3):
+    val = (((p2[1] - p1[1]) * (p3[0] - p2[0])) - ((p2[0] - p1[0]) * (p3[1] - p2[1])))
+
+    if val == 0:
+        return 0
+    if val > 0:
+        return 1
+    else:
+        return 2
+
+
+# Pre: p1, q1, p2, q2 are points
+# Returns true if edge p1-q1 and p2-q2 intersect
+def doIntersect(p1, q1, p2, q2):
+    # Find the four orientations needed for
+    # general and special cases
+    o1 = orientation(p1, q1, p2)
+    o2 = orientation(p1, q1, q2)
+    o3 = orientation(p2, q2, p1)
+    o4 = orientation(p2, q2, q1)
+
+    # General case
+    if (o1 != o2) and (o3 != o4):
+        return True
+
+    # Special Cases
+    # p1, q1 and p2 are collinear and
+    # p2 lies on segment p1q1
+    if (o1 == 0) and (onSegment(p1, p2, q1)):
+        return True
+
+    # p1, q1 and p2 are collinear and
+    # q2 lies on segment p1q1
+    if (o2 == 0) and (onSegment(p1, q2, q1)):
+        return True
+
+    # p2, q2 and p1 are collinear and
+    # p1 lies on segment p2q2
+    if (o3 == 0) and (onSegment(p2, p1, q2)):
+        return True
+
+    # p2, q2 and q1 are collinear and
+    # q1 lies on segment p2q2
+    if (o4 == 0) and (onSegment(p2, q1, q2)):
+        return True
+
+    return False
+
+
+# Pre: x and y are two points
+# Post: Returns the distance between the two points
+def distance(x, y):
+    return math.sqrt(pow(x[0] - y[0], 2) + pow(x[1] - y[1], 2))

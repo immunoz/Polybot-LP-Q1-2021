@@ -3,7 +3,6 @@ from sys import path
 from os import getcwd
 path.append(getcwd() + "\\cl")
 
-from cl.Polygons import ConvexPolygon, boundingBox, drawPolygons
 from cl.main import get_expression_tree
 from cl.PolygonTreeVisitor import PolygonTreeVisitor
 
